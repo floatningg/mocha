@@ -270,6 +270,28 @@ textarea.code-input:focus{border-color:var(--text)}
 .audit-enter{animation:auditFade .25s ease}
 @keyframes auditFade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
+.wiki-page{display:flex;gap:24px;height:calc(100vh - 200px);min-height:600px}
+.wiki-sidebar{width:280px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;flex-shrink:0;height:fit-content;max-height:calc(100vh - 200px);overflow-y:auto}
+.wiki-sidebar-header{margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.wiki-nav-section{display:flex;flex-direction:column;gap:4px}
+.wiki-nav-label{font-size:11px;text-transform:uppercase;color:var(--text2);letter-spacing:.5px;margin-bottom:8px;padding:0 4px}
+.wiki-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;width:100%;text-align:left}
+.wiki-nav-item:hover{background:var(--surface2);color:var(--text)}
+.wiki-nav-item.active{background:var(--surface2);color:var(--text);font-weight:600}
+.wiki-content{flex:1;min-width:0;max-height:calc(100vh - 200px);overflow-y:auto;padding-right:8px}
+.wiki-section{display:none}
+.wiki-section.active{display:block;animation:tabFadeIn .2s ease}
+.wiki-section h2{font-size:20px;margin-bottom:16px;color:var(--text)}
+.wiki-section h3{font-size:15px;margin:20px 0 8px;color:var(--text)}
+.wiki-section p{color:var(--text2);line-height:1.7;margin-bottom:12px}
+.wiki-section ul{margin-left:20px;margin-bottom:16px;color:var(--text2);line-height:1.8}
+.wiki-section code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:13px}
+.wiki-section pre{background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0}
+.wiki-section pre code{background:none;padding:0;font-size:13px;line-height:1.6;color:var(--text)}
+.function-dropdown{margin-bottom:16px}
+.function-dropdown select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-size:13px}
+#functionDocs{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;min-height:100px}
+
 @media(max-width:768px){
   .landing .logo-text{font-size:42px}
   .landing .features{grid-template-columns:1fr}
@@ -674,6 +696,106 @@ textarea.code-input:focus{border-color:var(--text)}
       </div>
     </div>
   </div>
+
+        <!-- Wiki tab -->
+        <div class="tab-content" id="tabWiki">
+          <div class="wiki-page">
+            <div class="wiki-sidebar">
+              <div class="wiki-sidebar-header">
+                <button class="btn btn-sm btn-primary" onclick="showTab('tabLink')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Home</button>
+              </div>
+              <div class="wiki-nav-section">
+                <div class="wiki-nav-label">Myntax Reference</div>
+                <button class="wiki-nav-item" data-section="wiki-intro">Introduction</button>
+                <button class="wiki-nav-item" data-section="wiki-variables">Variables</button>
+                <button class="wiki-nav-item" data-section="wiki-functions">Functions</button>
+                <button class="wiki-nav-item" data-section="wiki-control">Control Flow</button>
+                <button class="wiki-nav-item" data-section="wiki-examples">Examples</button>
+              </div>
+            </div>
+            <div class="wiki-content">
+              <section id="wiki-intro" class="wiki-section active">
+                <h2>Myntax Introduction</h2>
+                <p>Myntax is Mochabot's custom scripting language for creating powerful Discord economy commands. It's designed to be simple yet expressive.</p>
+                <h3>Basic Syntax</h3>
+                <pre><code>$say "Hello World!"
+$if &lt;user.cash&gt; > 1000
+  $say "You're rich!"
+$else
+  $say "Keep grinding!"
+$end</code></pre>
+              </section>
+              <section id="wiki-variables" class="wiki-section">
+                <h2>Variables</h2>
+                <h3>User Variables</h3>
+                <ul>
+                  <li><code>&lt;user.cash&gt;</code> - User's wallet balance</li>
+                  <li><code>&lt;user.bank&gt;</code> - User's bank balance</li>
+                  <li><code>&lt;user.level&gt;</code> - User's level</li>
+                  <li><code>&lt;user.xp&gt;</code> - User's XP</li>
+                  <li><code>&lt;user.id&gt;</code> - User's Discord ID</li>
+                  <li><code>&lt;user.name&gt;</code> - User's username</li>
+                </ul>
+                <h3>Server Variables</h3>
+                <ul>
+                  <li><code>&lt;main.bank&gt;</code> - Server bank</li>
+                  <li><code>&lt;main.name&gt;</code> - Server name</li>
+                  <li><code>&lt;main.id&gt;</code> - Server ID</li>
+                </ul>
+              </section>
+              <section id="wiki-functions" class="wiki-section">
+                <h2>Functions</h2>
+                <div class="function-dropdown">
+                  <select id="functionSelect" onchange="showFunctionDocs(this.value)">
+                    <option value="">Select a function...</option>
+                    <option value="say">$say - Send a message</option>
+                    <option value="give">$give - Give money to user</option>
+                    <option value="take">$take - Take money from user</option>
+                    <option value="set">$set - Set a variable</option>
+                    <option value="if">$if/$else/$end - Conditional</option>
+                    <option value="random">$random - Random number</option>
+                    <option value="math">$math - Math operations</option>
+                    <option value="level">$level - Level utilities</option>
+                    <option value="cooldown">$cooldown - Command cooldown</option>
+                    <option value="reply">$reply - Reply to message</option>
+                    <option value="embed">$embed - Create embed</option>
+                    <option value="delete">$delete - Delete message</option>
+                  </select>
+                </div>
+                <div id="functionDocs" style="margin-top:16px"></div>
+              </section>
+              <section id="wiki-control" class="wiki-section">
+                <h2>Control Flow</h2>
+                <h3>Conditionals</h3>
+                <pre><code>$if &lt;user.cash&gt; > 500
+  $say "You can afford this!"
+$elseif &lt;user.cash&gt; > 100
+  $say "Almost there..."
+$else
+  $say "Not enough cash"
+$end</code></pre>
+                <h3>Loops (coming soon)</h3>
+                <p>Loop constructs are planned for future releases.</p>
+              </section>
+              <section id="wiki-examples" class="wiki-section">
+                <h2>Examples</h2>
+                <h3>Simple Balance Check</h3>
+                <pre><code>My balance is $&lt;user.cash&gt; in wallet and $&lt;user.bank&gt; in bank.</code></pre>
+                <h3>Give Command with Validation</h3>
+                <pre><code>$if &lt;args.0&gt; == ""
+  $say "Usage: !give @user amount"
+$elseif &lt;args.1&gt; < 1
+  $say "Amount must be positive"
+$elseif &lt;user.cash&gt; < &lt;args.1&gt;
+  $say "You don't have enough cash"
+$else
+  $give &lt;args.0&gt; &lt;args.1&gt;
+  $say "Gave $&lt;args.1&gt; to &lt;args.0&gt;"
+$end</code></pre>
+              </section>
+            </div>
+          </div>
+        </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -863,7 +985,8 @@ function buildNav() {
   </div>
   <div class="sidebar-label">MAIN</div>
   ${ni('Link', 'tabLink', svgLink())}
-  ${ni('Feedback', 'tabUserFeedback', svgMsg())}`
+  ${ni('Feedback', 'tabUserFeedback', svgMsg())}
+  ${ni('Wiki', 'tabWiki', svgWiki())}`
   if (currentServerId) {
     html += `<div class="sidebar-label">${commandsLabel}</div>
     ${ni('Command Toggles', 'tabServerSettings', svgToggle())}
@@ -905,7 +1028,7 @@ function showTab(id) {
   document.getElementById('sidebar').classList.remove('open')
   document.getElementById('sidebarOverlay').classList.remove('show')
 
-  const names = { tabLink:'Link', tabUserFeedback:'Feedback', tabOverview:'Overview', tabStatus:'Status', tabSettings:'Settings', tabStatsModify:'Change @ value', tabServers:'Servers', tabAudit:'Audit Log', tabFeedback:'Feedback Inbox', tabServerSettings:'Command Toggles', tabServerVars:'Server Vars', tabCustomCmds:'Custom Commands' }
+  const names = { tabLink:'Link', tabUserFeedback:'Feedback', tabOverview:'Overview', tabStatus:'Status', tabSettings:'Settings', tabStatsModify:'Change @ value', tabServers:'Servers', tabAudit:'Audit Log', tabFeedback:'Feedback Inbox', tabServerSettings:'Command Toggles', tabServerVars:'Server Vars', tabCustomCmds:'Custom Commands', tabWiki:'Wiki' }
   document.getElementById('topbarTitle').textContent = names[id] || 'Mochabot'
 
   if (id === 'tabOverview') { refreshBotStatus(); loadBotStats(); loadMetrics2() }
@@ -917,6 +1040,46 @@ function showTab(id) {
   if (id === 'tabServerVars') { fillServerId(); if (currentServerId) loadServerVars(currentServerId) }
   if (id === 'tabCustomCmds') { fillServerId(); if (currentServerId) loadCustomCmds() }
   if (id === 'tabServerSettings') { fillServerId(); if (currentServerId) loadServerDetails(currentServerId) }
+  if (id === 'tabWiki') initWiki()
+}
+
+function initWiki() {
+  document.querySelectorAll('.wiki-nav-item').forEach(btn => {
+    btn.onclick = () => showWikiSection(btn.dataset.section)
+  })
+  showWikiSection('wiki-intro')
+}
+
+function showWikiSection(sectionId) {
+  document.querySelectorAll('.wiki-section').forEach(s => s.classList.remove('active'))
+  document.querySelectorAll('.wiki-nav-item').forEach(b => b.classList.remove('active'))
+  const section = document.getElementById(sectionId)
+  const btn = document.querySelector('.wiki-nav-item[data-section="' + sectionId + '"]')
+  if (section) section.classList.add('active')
+  if (btn) btn.classList.add('active')
+  if (sectionId === 'wiki-functions') showFunctionDocs('say')
+}
+
+const functionDocs = {
+  say: '<h3>$say</h3><p>Sends a message to the channel.</p><pre><code>$say "Hello World!"\n$say "Your balance: $<user.cash>"</code></pre>',
+  give: '<h3>$give</h3><p>Gives money to a user.</p><pre><code>$give @user 100\n$give <user.id> 500</code></pre>',
+  take: '<h3>$take</h3><p>Takes money from a user.</p><pre><code>$take @user 50</code></pre>',
+  set: '<h3>$set</h3><p>Sets a variable value.</p><pre><code>$set user.cash 1000\n$set main.bank 50000</code></pre>',
+  if: '<h3>$if / $elseif / $else / $end</h3><p>Conditional execution.</p><pre><code>$if <user.cash> > 100\n  $say "Rich!"\n$elseif <user.cash> > 10\n  $say "Okay"\n$else\n  $say "Poor"\n$end</code></pre>',
+  random: '<h3>$random</h3><p>Generates a random number.</p><pre><code>$random 1 100\n$random <user.cash></code></pre>',
+  math: '<h3>$math</h3><p>Performs math operations.</p><pre><code>$math <user.cash> + 100\n$math <user.cash> * 2</code></pre>',
+  level: '<h3>$level</h3><p>Level utilities.</p><pre><code>$level up\n$level set 10</code></pre>',
+  cooldown: '<h3>$cooldown</h3><p>Sets command cooldown.</p><pre><code>$cooldown 30s\n$cooldown 5m</code></pre>',
+  reply: '<h3>$reply</h3><p>Replies to the triggering message.</p><pre><code>$reply "Done!"</code></pre>',
+  embed: '<h3>$embed</h3><p>Creates a Discord embed.</p><pre><code>$embed title:"Hello" description:"World" color:#00ff00</code></pre>',
+  delete: '<h3>$delete</h3><p>Deletes the triggering message.</p><pre><code>$delete</code></pre>'
+}
+
+function showFunctionDocs(fn) {
+  const el = document.getElementById('functionDocs')
+  if (!el) return
+  if (!fn) { el.innerHTML = '<p style="color:var(--text2)">Select a function from the dropdown to see documentation.</p>'; return }
+  el.innerHTML = functionDocs[fn] || '<p style="color:var(--text2)">No documentation available.</p>'
 }
 
 function svgLink() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' }
@@ -930,6 +1093,7 @@ function svgEdit() { return '<svg viewBox="0 0 24 24" fill="none" stroke="curren
 function svgServer() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>' }
 function svgAudit() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' }
 function svgInbox() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>' }
+function svgWiki() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' }
 function svgToggle() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="1" y="3" width="22" height="18" rx="3"/><line x1="7" y1="9" x2="13" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="11" y2="17"/></svg>' }
 function svgVars() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>' }
 function svgCode() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' }
