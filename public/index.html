@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mochabot - Discord Economy Bot</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+<style>
+:root{--bg:#000;--surface:#111;--surface2:#1a1a1a;--primary:#fff;--primary-dim:#ccc;--accent:#666;--text:#fff;--text2:#999;--border:rgba(255,255,255,0.08);--red:#e74c3c;--green:#2ecc71;--gold:#fff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.5;user-select:none}
+input,textarea,[contenteditable],.srv-name,tr td:nth-child(2){user-select:text}
+a{color:var(--text);text-decoration:none}
+a:hover{text-decoration:underline}
+input,select,button,textarea{font-family:inherit;font-size:14px}
+textarea{font-family:monospace}
+
+#stars-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--dur) ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:0.1;transform:scale(0.8)}100%{opacity:0.4;transform:scale(1)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.container{position:relative;z-index:1;display:flex;min-height:100vh}
+.sidebar{display:none;width:260px;background:var(--surface);border-right:1px solid var(--border);flex-direction:column;flex-shrink:0;transition:transform .3s}
+.sidebar.show{display:flex}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;min-height:56px;flex-shrink:0}
+.sidebar-header h2{font-size:16px;font-weight:600;color:var(--text)}
+.owner-badge{background:var(--accent);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.sidebar-body{padding:12px;flex:1;overflow-y:auto}
+.sidebar-footer{flex-shrink:0;background:#0a0a0a;padding:12px 16px;border-top:1px solid var(--border)}
+.sidebar-footer .user-name{font-size:13px;color:var(--text2);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-section{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--surface2);color:var(--text)}
+.nav-item .ico{width:16px;height:16px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
+.server-dropdown{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:#666;margin-bottom:12px;cursor:pointer;outline:none;transition:color .15s}
+.server-dropdown.has-value{color:var(--text)}
+.server-dropdown option{background:var(--surface);color:var(--text)}
+.server-dropdown option:first-child{color:#666}
+.server-list{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
+.server-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .15s;border:none;background:transparent;color:var(--text);width:100%;text-align:left;font-size:14px}
+.server-item:hover,.server-item.active{background:var(--surface2)}
+.server-item img{width:28px;height:28px;border-radius:50%;flex-shrink:0}
+.server-item .srv-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-label{font-size:11px;text-transform:uppercase;color:var(--text2);letter-spacing:.5px;margin-bottom:8px;padding:0 12px;margin-top:12px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{display:none;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);align-items:center;gap:12px}
+.topbar .menu-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:4px}
+.topbar h2{font-size:16px;font-weight:600;flex:1}
+.content{padding:20px;flex:1;max-width:1200px;width:100%;margin:0 auto}
+.page{display:none}
+.page.active{display:block}
+
+.tab-content{display:none}
+.tab-content.active{display:block;animation:tabFadeIn .2s ease}
+@keyframes tabFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  background-color: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 4px;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+}
+.landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;animation:fadeIn 0.8s ease-out}
+.landing .logo-text{font-size:64px;font-weight:800;color:var(--text);margin-bottom:8px;letter-spacing:-1px}
+.landing .tagline{font-size:20px;color:var(--text2);margin-bottom:32px;animation:fadeIn 1s ease-out}
+.landing .subtitle{font-size:14px;color:var(--text2);margin-bottom:48px;max-width:500px;line-height:1.7}
+.landing-buttons{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:60px}
+.landing .btn-hero{padding:14px 36px;border-radius:12px;border:none;cursor:pointer;font-weight:600;font-size:16px;transition:all .2s}
+.landing .btn-hero.primary{background:#333;color:#fff;box-shadow:0 4px 20px rgba(255,255,255,0.05)}
+.landing .btn-hero.primary:hover{transform:translateY(-2px);background:#444}
+.landing .btn-hero.secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+.landing .btn-hero.secondary:hover{background:var(--surface2)}
+.landing .features{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:800px;width:100%;animation:fadeIn 1.2s ease-out}
+.landing .feature-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all .3s}
+.landing .feature-card:hover{transform:translateY(-4px);border-color:var(--text);box-shadow:0 8px 30px rgba(255,255,255,0.05)}
+.landing .feature-card .icon{font-size:32px;margin-bottom:12px}
+.landing .feature-card h3{font-size:15px;margin-bottom:6px;color:var(--text)}
+.landing .feature-card p{font-size:13px;color:var(--text2);line-height:1.6}
+.landing .mochaccino{position:relative;font-size:48px;margin-bottom:8px;animation:float 3s ease-in-out infinite}
+
+.form-page{max-width:400px;margin:60px auto;padding:32px;background:var(--surface);border-radius:16px;border:1px solid var(--border);animation:fadeIn 0.4s ease-out}
+.form-page h1{font-size:24px;margin-bottom:4px;color:var(--text)}
+.form-page .form-sub{color:var(--text2);margin-bottom:24px;font-size:14px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.form-group input,.form-group select{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;transition:border .15s}
+.form-group input:focus,.form-group select:focus{border-color:var(--text)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:500;font-size:14px;transition:all .15s}
+.btn-primary{background:#333;color:#fff;font-weight:600}
+.btn-primary:hover{background:#444}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#c0392b}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{background:#27ae60}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--surface2)}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.error{color:var(--red);font-size:13px;margin-top:6px;display:none}
+.success{color:var(--green);font-size:13px;margin-top:6px;display:none}
+.form-footer{margin-top:16px;text-align:center;font-size:13px;color:var(--text2)}
+.form-footer a{cursor:pointer;color:var(--text)}
+
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat-card h3{font-size:12px;text-transform:uppercase;color:var(--text2);letter-spacing:.5px;margin-bottom:4px}
+.stat-card .value{font-size:20px;font-weight:700;color:var(--text)}
+.stat-card .sub{font-size:12px;color:var(--text2);margin-top:2px}
+.chart-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.chart-wrapper h3{margin-bottom:12px;font-size:14px;font-weight:600}
+.chart-wrapper canvas{width:100%;height:280px;display:block}
+.range-picker{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.range-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:12px;transition:all .15s}
+.range-btn:hover{background:var(--surface2)}
+.range-btn.active{background:var(--text);color:#000;border-color:var(--text);font-weight:600}
+.bot-status{display:flex;align-items:center;gap:6px;font-size:13px}
+.bot-status .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.bot-status .dot.online{background:var(--green);box-shadow:0 0 8px rgba(46,204,113,0.5)}
+.bot-status .dot.offline{background:var(--red)}
+.pair-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.pair-section h2{font-size:18px;margin-bottom:4px}
+.pair-section p{color:var(--text2);font-size:13px;margin-bottom:14px}
+.pair-section .pair-input{display:flex;gap:8px;flex-wrap:wrap}
+.pair-section input{flex:1;min-width:150px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none}
+.pair-section input:focus{border-color:var(--text)}
+.toggles-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.toggles-section h3{font-size:14px;margin-bottom:12px}
+.toggle-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+.toggle-item:last-child{border-bottom:none}
+.toggle-item .cmd-info{display:flex;flex-direction:column;gap:2px}
+.toggle-item .cmd-name{font-weight:500;font-size:14px}
+.toggle-item .cmd-desc{font-size:12px;color:var(--text2)}
+.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-switch .slider{position:absolute;inset:0;background:var(--border);border-radius:12px;transition:.2s}
+.toggle-switch .slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle-switch input:checked+.slider{background:var(--accent)}
+.toggle-switch input:checked+.slider::before{transform:translateX(20px)}
+.toast{position:fixed;top:20px;right:20px;padding:12px 24px;border-radius:8px;color:#fff;font-size:13px;font-weight:600;z-index:99999;pointer-events:none;max-width:350px;border:1px solid;opacity:0;transform:translateY(-10px);transition:opacity .25s ease,transform .25s ease;visibility:hidden}
+.toast.show{opacity:1;transform:translateY(0);visibility:visible}
+.toast.error{background:rgba(231,76,60,0.9);border-color:var(--red)}
+.toast.success{background:rgba(46,204,113,0.9);border-color:var(--green)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:98}
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.settings-card h3{font-size:15px;margin-bottom:12px}
+.settings-card .setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.settings-card .setting-row:last-child{border-bottom:none}
+.settings-card .setting-label{font-size:13px;color:var(--text2)}
+.settings-card .setting-value{font-weight:500}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.status-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .15s}
+.status-card:hover{border-color:var(--text)}
+.status-card h4{font-size:13px;color:var(--text2);margin-bottom:4px}
+.status-card .val{font-size:18px;font-weight:600}
+.inline-form{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:12px}
+.inline-form .form-group{margin-bottom:0;min-width:120px;flex:1}
+.inline-form .form-group label{margin-bottom:4px}
+textarea.code-input{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-family:monospace;font-size:13px;min-height:80px;resize:vertical}
+textarea.code-input:focus{border-color:var(--text)}
+.server-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.server-table table{width:100%;border-collapse:collapse}
+.server-table th{text-align:left;padding:12px 16px;background:var(--surface2);font-size:12px;text-transform:uppercase;color:var(--text2);letter-spacing:.5px;font-weight:500}
+.server-table td{padding:10px 16px;border-top:1px solid var(--border);font-size:13px}
+.server-table td:first-child{display:flex;align-items:center;gap:10px}
+.server-table img{width:24px;height:24px;border-radius:50%}
+
+.audit-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.audit-table table{width:100%;border-collapse:collapse}
+.audit-table th{text-align:left;padding:10px 14px;background:var(--surface2);font-size:11px;text-transform:uppercase;color:var(--text2);letter-spacing:.5px;font-weight:500}
+.audit-table td{padding:8px 14px;border-top:1px solid var(--border);font-size:12px}
+.audit-table .time{font-family:monospace;font-size:11px;color:var(--text2);white-space:nowrap}
+.audit-table .action{font-weight:500}
+.audit-table .detail{color:var(--text2);font-size:11px}
+.audit-pagination{display:flex;align-items:center;justify-content:center;gap:16px;padding:12px}
+
+.feedback-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}
+.feedback-item .fb-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.feedback-item .fb-user{font-size:12px;color:var(--text2)}
+.feedback-item .fb-msg{font-size:14px;margin-bottom:8px}
+.feedback-item .fb-status{font-size:11px;padding:2px 10px;border-radius:10px;font-weight:600}
+.feedback-item .fb-status.open{background:rgba(46,204,113,0.2);color:var(--green)}
+.feedback-item .fb-status.acknowledged{background:rgba(255,255,255,0.1);color:var(--text2)}
+.feedback-item .fb-status.resolved{background:rgba(255,255,255,0.05);color:var(--accent)}
+.feedback-item .fb-actions{display:flex;gap:6px;margin-top:8px}
+
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.top-cmd-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.top-cmd-item .cmd-count{font-size:16px;font-weight:700;color:var(--text)}
+.top-cmd-item .cmd-name{font-size:11px;color:var(--text2)}
+.cc-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:border-color .15s}
+.cc-row:hover{border-color:var(--text)}
+.cc-row .cc-row-top{font-size:13px;font-weight:600;color:var(--text)}
+.cc-row .cc-row-bot{font-size:11px;color:var(--text2);margin-top:1px}
+.cc-row .cc-row-inner{flex:1;min-width:0}
+.cc-row .btn-del{background:none;border:none;cursor:pointer;color:var(--red);padding:4px;display:flex;flex-shrink:0}
+.flex-h{display:flex}
+.stat-number{font-size:28px;font-weight:800;color:var(--text)}
+
+.sidebar.sticky{position:sticky;top:0;height:100vh;align-self:flex-start}
+.main-scroll{overflow-y:auto;height:100vh}
+
+.custom-dropdown{position:relative;margin-bottom:12px}
+.custom-dropdown .dd-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;user-select:none}
+.custom-dropdown .dd-header:hover,.custom-dropdown.open .dd-header{border-color:var(--text);color:var(--text)}
+.custom-dropdown .dd-header .arrow{transition:transform .2s;display:inline-flex}
+.custom-dropdown.open .dd-header .arrow{transform:rotate(180deg)}
+.dd-sel-wrap{display:flex;align-items:center;gap:8px;overflow:hidden}
+.dd-sel-icon{width:22px;height:22px;border-radius:50%;flex-shrink:0}
+.custom-dropdown .dd-body{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;opacity:0;transform:translateY(-8px);pointer-events:none;transition:all .2s;z-index:50;max-height:260px;overflow-y:auto}
+.custom-dropdown.open .dd-body{opacity:1;transform:translateY(0);pointer-events:auto}
+.dd-item{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;transition:background .1s;border:none;background:transparent;color:var(--text);width:100%;text-align:left;font-size:14px}
+.dd-item:hover{background:var(--surface2)}
+.dd-item img{width:28px;height:28px;border-radius:50%;flex-shrink:0}
+.dd-item .srv-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-item .srv-check{color:var(--green);margin-left:auto;font-size:14px}
+
+.rotating-editor{margin-top:8px}
+.rotating-editor .re-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.rotating-editor .re-row input[type="text"]{flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-size:13px}
+.rotating-editor .re-row input[type="text"]:focus{border-color:var(--text)}
+.rotating-editor .re-row .re-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px;line-height:1;opacity:.6;transition:opacity .15s}
+.rotating-editor .re-row .re-del:hover{opacity:1}
+.rotating-editor .re-add{display:flex;align-items:center;gap:6px;margin-top:8px}
+.rotating-editor .re-add .re-row{flex:1;display:flex;align-items:center;gap:6px}
+.rotating-editor .re-add button{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;line-height:1}
+.rotating-editor .re-add button:hover{background:var(--text);color:#000}
+.rotating-editor .re-add input[type="text"]{flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-size:13px}
+.rotating-editor .re-add input[type="text"]:focus{border-color:var(--text)}
+.rotating-editor .re-add .re-duration{width:60px;flex:none;text-align:center;padding:8px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-size:13px}
+.rotating-editor .re-add .re-duration:focus{border-color:var(--text)}
+.rotating-editor .re-add .re-dur-label{font-size:12px;color:var(--text2);white-space:nowrap}
+
+.pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;transition:opacity .15s}
+.pagination.paginating{opacity:.5;pointer-events:none}
+.pagination span{font-size:13px;color:var(--text2)}
+
+.ico-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px}
+.ico-wrap .badge{position:absolute;top:-10px;right:-12px;background:var(--red);color:#fff;font-size:8px;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1}
+.ico-wrap .badge.hidden{display:none}
+
+.btn-grey{background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text)}
+.btn-grey:hover{background:rgba(255,255,255,0.14)}
+
+.cmd-category{margin-bottom:16px}
+.cmd-category:last-child{margin-bottom:0}
+.cmd-category .cat-header{font-size:12px;text-transform:uppercase;color:var(--text2);letter-spacing:.5px;padding:8px 12px 4px;font-weight:600}
+.top-cmd-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.top-cmd-item .cmd-count{font-size:18px;font-weight:700;color:var(--text)}
+.top-cmd-item .cmd-name{font-size:12px;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.audit-enter{animation:auditFade .25s ease}
+@keyframes auditFade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:768px){
+  .landing .logo-text{font-size:42px}
+  .landing .features{grid-template-columns:1fr}
+  .landing .feature-card{padding:20px}
+  .sidebar,.sidebar.sticky{position:fixed;left:0;top:0;bottom:0;z-index:99;transform:translateX(-100%);height:auto;align-self:auto}
+  .sidebar.show,.sidebar.sticky.show{display:flex}
+  .sidebar.open,.sidebar.sticky.open{transform:translateX(0)}
+  .sidebar-overlay.show{display:block}
+  .topbar{display:flex}
+  .content{padding:16px}
+  .form-page{margin:20px 12px;padding:24px}
+  .stat-cards{grid-template-columns:1fr 1fr}
+  .chart-wrapper canvas{height:200px}
+  .status-grid{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr}
+  .audit-table table,.server-table table{font-size:12px}
+  .audit-table th,.audit-table td,.server-table th,.server-table td{padding:6px 8px}
+}
+@media(max-width:480px){
+  .stat-cards,.status-grid{grid-template-columns:1fr}
+  .landing .logo-text{font-size:32px}
+  .landing .tagline{font-size:16px}
+}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99998;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+.overlay.show{opacity:1;visibility:visible}
+.dialog{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:400px;width:90%;z-index:99999}
+.dialog h3{margin-bottom:8px;font-size:16px}
+.dialog p{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5}
+.dialog .d-btns{display:flex;gap:8px;justify-content:flex-end}
+.dialog .d-btns button{min-width:80px}
+.re-add .re-add-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:var(--text);min-width:28px;height:28px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="container">
+    <div class="sidebar sticky" id="sidebar">
+    <div class="sidebar-header">
+      <h2>Mochabot</h2>
+      <span class="owner-badge" id="ownerBadge" style="display:none">OWNER</span>
+    </div>
+    <div class="sidebar-body" id="sidebarBody"></div>
+    <div class="sidebar-footer" id="sidebarFooter">
+      <div class="user-name" id="sidebarUsername"></div>
+      <button class="btn btn-sm btn-outline" onclick="logout()" style="width:100%">Logout</button>
+    </div>
+  </div>
+
+  <div class="main main-scroll">
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <h2 id="topbarTitle">Mochabot</h2>
+    </div>
+
+    <div class="content">
+
+      <!-- LANDING -->
+      <div class="page active" id="pageLanding">
+        <div class="landing">
+          <div class="mochaccino">☕</div>
+          <div class="logo-text">Mochabot</div>
+          <div class="tagline">Your premium Discord economy bot</div>
+          <div class="subtitle">Manage your Discord economy, review server analytics, control bot settings, and monitor everything in real-time — all from one sleek dashboard.</div>
+          <div class="landing-buttons">
+            <button class="btn-hero primary" onclick="showPage('pageRegister')">Get Started</button>
+            <button class="btn-hero secondary" onclick="showPage('pageLogin')">Sign In</button>
+          </div>
+          <div class="features">
+            <div class="feature-card">
+              <div class="icon">📊</div>
+              <h3>Live Metrics</h3>
+              <p>Real-time CPU, RAM, and performance charts with adjustable time ranges.</p>
+            </div>
+            <div class="feature-card">
+              <div class="icon">🛠️</div>
+              <h3>Full Control</h3>
+              <p>Manage prefix, bot presence, command toggles, and economy settings.</p>
+            </div>
+            <div class="feature-card">
+              <div class="icon">🔗</div>
+              <h3>Server Pairing</h3>
+              <p>Link your Discord servers and control command permissions per-server.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="page" id="pageLogin">
+        <div class="form-page">
+          <h1>Welcome Back</h1>
+          <div class="form-sub">Sign in to your Mochabot dashboard</div>
+          <div class="form-group"><label>Username</label><input type="text" id="loginUsername" autocomplete="username"></div>
+          <div class="form-group"><label>Password</label><input type="password" id="loginPassword" autocomplete="current-password"></div>
+          <div class="error" id="loginError"></div>
+          <button class="btn btn-primary" onclick="login()" style="width:100%">Sign In</button>
+          <div class="form-footer">Don't have an account? <a onclick="showPage('pageRegister')">Register</a></div>
+          <div class="form-footer" style="margin-top:8px"><a onclick="showPage('pageLanding')">Back to home</a></div>
+        </div>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="page" id="pageRegister">
+        <div class="form-page">
+          <h1>Create Account</h1>
+          <div class="form-sub">Join the Mochabot dashboard</div>
+          <div class="form-group"><label>Username</label><input type="text" id="regUsername" autocomplete="username"></div>
+          <div class="form-group"><label>Password (6+ characters)</label><input type="password" id="regPassword" autocomplete="new-password"></div>
+          <div class="error" id="regError"></div>
+          <div class="success" id="regSuccess"></div>
+          <button class="btn btn-primary" onclick="register()" style="width:100%">Create Account</button>
+          <div class="form-footer">Already have an account? <a onclick="showPage('pageLogin')">Login</a></div>
+          <div class="form-footer" style="margin-top:8px"><a onclick="showPage('pageLanding')">Back to home</a></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="page" id="pageDashboard">
+
+        <!-- LINK tab -->
+        <div class="tab-content active" id="tabLink">
+          <div class="pair-section">
+            <h2>Link Your Server</h2>
+            <p>Run <code>!pair</code> in your Discord server as an admin to get a pairing code, then enter it below.</p>
+            <div class="pair-input">
+              <input type="text" id="pairCode" placeholder="Enter pairing code" maxlength="10" onkeydown="if(event.key==='Enter')pairServer()">
+              <button class="btn btn-primary btn-sm" onclick="pairServer()">Link Server</button>
+            </div>
+            <div class="error" id="pairError" style="margin-top:8px"></div>
+            <div class="success" id="pairSuccess" style="margin-top:8px"></div>
+          </div>
+          <div class="toggles-section">
+            <h3>Your Linked Servers</h3>
+            <div id="linkedServersList"><p style="color:var(--text2);font-size:13px">No servers linked yet.</p></div>
+          </div>
+        </div>
+
+        <!-- OVERVIEW tab (owner only - combined bot settings, stats, metrics, prefix) -->
+        <div class="tab-content" id="tabOverview">
+          <div class="stat-cards">
+            <div class="stat-card">
+              <h3>Bot Status</h3>
+              <div class="bot-status" id="botStatusDisplay"><span class="dot offline"></span> Checking...</div>
+              <div style="margin-top:10px;display:flex;gap:6px">
+                <button class="btn btn-sm btn-grey" id="botToggleBtn" onclick="toggleBot()">Start</button>
+                <button class="btn btn-sm btn-grey" onclick="refreshBotStatus()">Refresh</button>
+              </div>
+            </div>
+            <div class="stat-card">
+              <h3>Bot Username</h3>
+              <div class="value" id="botUsername" style="font-size:16px">-</div>
+            </div>
+            <div class="stat-card">
+              <h3>Uptime</h3>
+              <div class="value" id="botUptime" style="font-size:16px">-</div>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <h3>System Metrics</h3>
+            <div class="range-picker">
+              <button class="range-btn active" data-range="hour" onclick="setRange('hour')">Hour</button>
+              <button class="range-btn" data-range="day" onclick="setRange('day')">Day</button>
+              <button class="range-btn" data-range="week" onclick="setRange('week')">Week</button>
+              <button class="range-btn" data-range="month" onclick="setRange('month')">Month</button>
+              <button class="range-btn" data-range="year" onclick="setRange('year')">Year</button>
+            </div>
+            <canvas id="metricsChart"></canvas>
+          </div>
+          <div class="chart-wrapper" style="margin-top:16px">
+            <h3>Top Commands</h3>
+            <div class="grid-3" id="topCmds"></div>
+          </div>
+          <div class="stat-cards" id="overviewStats" style="margin-top:16px"></div>
+        </div>
+
+        <!-- Status tab (owner only) -->
+        <div class="tab-content" id="tabStatus">
+          <div class="settings-card">
+            <h3>Bot Presence</h3>
+            <div class="status-grid" id="statusGrid"></div>
+            <div class="inline-form">
+              <div class="form-group">
+                <label>Status Mode</label>
+                <select id="statusMode"><option value="online">Online</option><option value="idle">Idle</option><option value="dnd">Do Not Disturb</option><option value="invisible">Invisible</option></select>
+              </div>
+              <div class="form-group">
+                <label>Activity Type</label>
+                <select id="activityType"><option value="none">None</option><option value="static">Static</option><option value="rotating">Rotating</option><option value="random">Random</option></select>
+              </div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>Static Status Text</h3>
+            <input type="text" id="staticStatusInput" placeholder="with the economy" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none">
+          </div>
+          <div class="settings-card">
+            <h3>Rotating Statuses</h3>
+            <div id="rotatingEditor" class="rotating-editor"></div>
+<div class="re-add">
+                  <div class="re-row">
+                    <input type="text" id="reNewStatus" placeholder="New status text" style="flex:1;">
+                    <button class="re-add-btn" onclick="addRotatingStatus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  </div>
+                  <span class="re-dur-label">sec:</span>
+                  <input type="text" id="reNewDuration" class="re-duration" value="15" onkeypress="return event.charCode>=48&&event.charCode<=57" onchange="updateSharedDuration(this.value)">
+                </div>
+          </div>
+          <button class="btn btn-primary" onclick="updateBotPresence()" style="width:100%;margin-top:12px">Apply</button>
+        </div>
+
+        <!-- Settings tab (owner only) -->
+        <div class="tab-content" id="tabSettings">
+          <div class="settings-card">
+            <h3>Bot Settings</h3>
+            <div id="settingsList"></div>
+          </div>
+          <div class="settings-card">
+            <h3>Add / Edit Setting</h3>
+            <div class="inline-form">
+              <div class="form-group">
+                <label>Key</label>
+                <input type="text" id="settingsKeyInput" placeholder="setting_key">
+              </div>
+              <div class="form-group" style="flex:2">
+                <label>Value</label>
+                <input type="text" id="settingsValueInput" placeholder="value">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="saveSetting()">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Change @ value tab (owner only) -->
+        <div class="tab-content" id="tabStatsModify">
+          <div class="settings-card">
+            <h3>Modify User Stats</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Modify a user's wallet, bank, or level by username.</p>
+            <div class="inline-form">
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="smUsername" placeholder="username">
+              </div>
+              <div class="form-group">
+                <label>Field</label>
+                <select id="smField"><option value="cash">Cash (Wallet)</option><option value="bank">Bank</option><option value="level">Level</option></select>
+              </div>
+              <div class="form-group">
+                <label>Amount</label>
+                <input type="number" id="smAmount" placeholder="0">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="statsModify()">Apply</button>
+            </div>
+            <div class="success" id="smSuccess"></div>
+            <div class="error" id="smError"></div>
+          </div>
+        </div>
+
+        <!-- Servers tab (owner only) -->
+        <div class="tab-content" id="tabServers">
+          <div class="settings-card">
+            <h3>All Servers <span id="serverCount" style="font-size:13px;color:var(--text2);font-weight:400"></span></h3>
+          </div>
+          <div class="server-table">
+            <table>
+              <thead><tr><th>Server</th><th>ID</th><th>Members</th><th>Actions</th></tr></thead>
+              <tbody id="allServersTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Audit Log tab (owner only) -->
+        <div class="tab-content" id="tabAudit">
+          <div class="settings-card">
+            <h3>Audit Log</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Recent actions across the dashboard.</p>
+          </div>
+          <div class="audit-table" id="auditTable"></div>
+          <div class="audit-pagination" id="auditPagination"></div>
+        </div>
+
+        <!-- Feedback Inbox tab (owner only) -->
+        <div class="tab-content" id="tabFeedback">
+          <div class="settings-card">
+            <h3>User Feedback</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Suggestions and reports from dashboard users.</p>
+            <div id="feedbackList"></div>
+          </div>
+        </div>
+
+        <!-- User Feedback submit tab -->
+        <div class="tab-content" id="tabUserFeedback">
+          <div class="settings-card">
+            <h3>Submit Feedback</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Have a suggestion or found an issue? Let us know.</p>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="fbCategory"><option value="general">General</option><option value="bug">Bug Report</option><option value="suggestion">Suggestion</option><option value="feature">Feature Request</option></select>
+            </div>
+            <div class="form-group">
+              <label>Message</label>
+              <textarea class="code-input" id="fbMessage" placeholder="Tell us what's on your mind..." style="min-height:100px"></textarea>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="submitFeedback()">Submit</button>
+            <div class="success" id="fbSuccess"></div>
+            <div class="error" id="fbError"></div>
+          </div>
+        </div>
+
+        <!-- Server Settings tab -->
+        <div class="tab-content" id="tabServerSettings">
+          <div class="stat-cards">
+            <div class="stat-card">
+              <h3>Server</h3>
+              <div class="value" id="selectedServerName" style="font-size:16px">-</div>
+            </div>
+            <div class="stat-card">
+              <h3>Members</h3>
+              <div class="value" id="selectedServerMembers" style="font-size:16px">-</div>
+            </div>
+          </div>
+          <div class="toggles-section">
+            <h3>Command Toggles</h3>
+            <div id="togglesList"></div>
+          </div>
+        </div>
+
+        <!-- Server Variables tab -->
+        <div class="tab-content" id="tabServerVars">
+          <div class="settings-card">
+            <h3>Server Variables</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Set variables for the selected server (prefix, welcome message, etc.)</p>
+            <div class="inline-form" style="margin-bottom:12px">
+              <div class="form-group" style="flex:0 0 auto">
+                <label>Server</label>
+                <input type="text" id="svServerDisplay" readonly style="color:var(--text2);background:var(--surface);min-width:140px">
+              </div>
+              <div class="form-group" style="flex:1">
+                <label>Key</label>
+                <input type="text" id="svKey" placeholder="variable name">
+              </div>
+              <div class="form-group" style="flex:2">
+                <label>Value</label>
+                <input type="text" id="svValue" placeholder="value">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="setServerVar()">Set</button>
+            </div>
+            <div id="serverVarsList"><p style="color:var(--text2);font-size:13px">Select a server first.</p></div>
+          </div>
+        </div>
+
+        <!-- Custom Commands tab -->
+        <div class="tab-content" id="tabCustomCmds">
+          <div class="settings-card">
+            <div class="flex-h" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+              <h3 style="margin:0">Custom Commands</h3>
+              <button class="btn btn-sm btn-primary" onclick="createCustomCmd()" style="display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add</button>
+            </div>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Create custom Myntax commands. Use <code>$say "message"</code> or just <code>"message"</code>. Access user variables with <code>&lt;user.cash&gt;</code>, <code>&lt;user.bank&gt;</code>, <code>&lt;user.level&gt;</code>, <code>&lt;user.xp&gt;</code> or server bank with <code>&lt;main.bank&gt;</code>.</p>
+            <div id="customCmdsList" style="margin-bottom:12px"><p style="color:var(--text2);font-size:13px">No custom commands yet.</p></div>
+            <div id="ccEditor" class="hidden" style="border-top:1px solid var(--border);padding-top:16px">
+              <input type="hidden" id="ccEditId" value="">
+              <div class="inline-form" style="flex-wrap:wrap">
+                <div class="form-group" style="flex:1;min-width:140px">
+                  <label>Command Name</label>
+                  <input type="text" id="ccName" placeholder="hello">
+                </div>
+                <div class="form-group" style="flex:1;min-width:120px">
+                  <label>Server</label>
+                  <input type="text" id="ccServerDisplay" readonly style="color:var(--text2);background:var(--surface)">
+                </div>
+                <div class="form-group" style="flex:1;min-width:120px">
+                  <label>Category</label>
+                  <select id="ccCategory"><option value="general">general</option></select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="ccDescription" placeholder="Brief description of the command" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none">
+              </div>
+              <div class="form-group">
+                <label>Myntax Script</label>
+                <textarea id="ccScript" class="code-input" placeholder="$say &quot;Hello World!&quot;" style="min-height:80px"></textarea>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+                <label class="toggle-switch" style="position:relative;width:36px;height:20px"><input type="checkbox" id="ccSuppress"><span class="slider"></span></label>
+                <span style="font-size:13px;color:var(--text2)">Suppress errors</span>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary btn-sm" onclick="saveCustomCmd()">Save</button>
+                <button class="btn btn-sm btn-outline" onclick="closeCcEditor()">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="overlay" id="dialogOverlay"><div class="dialog" id="dialogBox"><h3 id="dialogTitle">Confirm</h3><p id="dialogMsg">Are you sure?</p><div class="d-btns"><button class="btn btn-sm btn-outline" id="dialogCancelBtn">Cancel</button><button class="btn btn-sm btn-danger" id="dialogConfirmBtn">Confirm</button></div></div></div>
+
+<script>
+const API = '/api'
+let currentRange = 'hour'
+let currentServerId = null
+let currentServers = []
+let isOwner = false
+let currentTab = 'tabLink'
+let metricsRefresh = null
+let statusRefresh = null
+let botStatusRefresh = null
+let feedbackPoll = null
+let auditPage = 1
+let auditTotalPages = 1
+
+function starsInit() {
+  const canvas = document.getElementById('stars-canvas')
+  const ctx = canvas.getContext('2d')
+  let stars = []
+  let w, h
+
+  function resize() {
+    w = canvas.width = window.innerWidth
+    h = canvas.height = window.innerHeight
+    stars = []
+    const count = Math.min(100, Math.floor((w * h) / 12000))
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 1.2 + 0.2,
+        a: Math.random() * 0.4 + 0.1,
+        da: (Math.random() - 0.5) * 0.015,
+        speed: Math.random() * 0.1 + 0.01
+      })
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h)
+    for (const s of stars) {
+      s.a += s.da
+      if (s.a > 0.5 || s.a < 0.05) s.da = -s.da
+      s.y -= s.speed
+      if (s.y < -5) { s.y = h + 5; s.x = Math.random() * w }
+      ctx.beginPath()
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(255,255,255,${s.a})`
+      ctx.fill()
+    }
+    requestAnimationFrame(draw)
+  }
+
+  window.addEventListener('resize', resize)
+  resize()
+  draw()
+}
+starsInit()
+
+function getToken() { return localStorage.getItem('mocha_token') }
+
+function setToken(t) { if (t) localStorage.setItem('mocha_token', t); else localStorage.removeItem('mocha_token') }
+
+async function api(path, opts = {}) {
+  const headers = {}
+  if (opts.body || opts.method === 'POST') headers['Content-Type'] = 'application/json'
+  const token = getToken()
+  if (token) headers['Authorization'] = 'Bearer ' + token
+  const { headers: _h, body, ...rest } = opts
+  const fetchOpts = { headers, ...rest }
+  if (body) fetchOpts.body = body
+
+  const res = await fetch(API + path, fetchOpts)
+  const data = await res.json()
+
+  // NEW: Globally catch 401 Unauthorized errors and kill the session
+  if (res.status === 401) {
+    forceLogout();
+    throw new Error(data.error || 'Session expired');
+  }
+
+  if (!res.ok && data.error) throw new Error(data.error)
+  return data
+}
+
+// NEW: Helper function to clean up intervals and UI
+function forceLogout() {
+  setToken(null)
+  clearInterval(metricsRefresh)
+  clearInterval(statusRefresh)
+  clearInterval(botStatusRefresh)
+  document.getElementById('loginPassword').value = ''
+  document.getElementById('sidebar').classList.remove('show', 'open')
+  document.getElementById('sidebarOverlay').classList.remove('show')
+  showPage('pageLanding')
+}
+
+function toast(msg, type = 'error') {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.className = 'toast ' + type + ' show'
+  setTimeout(() => el.classList.remove('show'), 3500)
+}
+
+function confirmAsync(msg, title = 'Confirm') {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dialogOverlay')
+    document.getElementById('dialogTitle').textContent = title
+    document.getElementById('dialogMsg').textContent = msg
+    const confirmBtn = document.getElementById('dialogConfirmBtn')
+    const cancelBtn = document.getElementById('dialogCancelBtn')
+    const cleanup = (result) => {
+      overlay.classList.remove('show')
+      confirmBtn.onclick = null; cancelBtn.onclick = null
+      resolve(result)
+    }
+    confirmBtn.onclick = () => cleanup(true)
+    cancelBtn.onclick = () => cleanup(false)
+    overlay.classList.add('show')
+  })
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.getElementById(id).classList.add('active')
+  if (id === 'pageLogin') document.getElementById('loginPassword').focus()
+}
+
+async function login() {
+  const username = document.getElementById('loginUsername').value.trim()
+  const password = document.getElementById('loginPassword').value
+  const err = document.getElementById('loginError')
+  err.style.display = 'none'
+  if (!username || !password) { err.textContent = 'Fill in all fields'; err.style.display = 'block'; return }
+  try {
+    const data = await api('/login', { method: 'POST', body: JSON.stringify({ username, password }) })
+    if (data.success) { setToken(data.token); loadDashboard(data.user) }
+  } catch (e) { err.textContent = e.message; err.style.display = 'block' }
+}
+
+async function register() {
+  const username = document.getElementById('regUsername').value.trim()
+  const password = document.getElementById('regPassword').value
+  const err = document.getElementById('regError')
+  const success = document.getElementById('regSuccess')
+  err.style.display = 'none'; success.style.display = 'none'
+  if (!username || !password) { err.textContent = 'Fill in all fields'; err.style.display = 'block'; return }
+  if (password.length < 6) { err.textContent = 'Password must be 6+ characters'; err.style.display = 'block'; return }
+  try {
+    const data = await api('/register', { method: 'POST', body: JSON.stringify({ username, password }) })
+    if (data.success) { setToken(data.token); loadDashboard(data.user) }
+  } catch (e) { err.textContent = e.message; err.style.display = 'block' }
+}
+
+async function logout() {
+  try { await api('/logout', { method: 'POST' }) } catch {}
+  setToken(null)
+
+  clearInterval(metricsRefresh); clearInterval(statusRefresh); clearInterval(botStatusRefresh); clearInterval(feedbackPoll)
+  document.getElementById('loginPassword').value = ''
+  document.getElementById('sidebar').classList.remove('show')
+  document.getElementById('sidebar').classList.remove('open')
+  document.getElementById('sidebarOverlay').classList.remove('show')
+  showPage('pageLanding')
+}
+
+function buildNav() {
+  const nav = document.getElementById('sidebarBody')
+  const selSrv = currentServers.find(s => s.id === currentServerId)
+  const selIcon = selSrv?.icon ? '<img src="' + selSrv.icon + '" class="dd-sel-icon">' : ''
+  const selName = selSrv?.name || 'Select a server'
+  const commandsLabel = selSrv?.name ? selSrv.name.toUpperCase() : 'COMMANDS'
+  function ni(text, tab, svg) {
+    const a = currentTab === tab ? ' active' : ''
+    return `<button class="nav-item${a}" data-tab="${tab}" onclick="showTab('${tab}')"><span class="ico">${svg}</span>${text}</button>`
+  }
+  let html = `<div class="custom-dropdown" id="serverDropdown">
+    <div class="dd-header" onclick="toggleServerDropdown()">
+      <span class="dd-sel-wrap">${selIcon}<span id="ddSelected">${selName}</span></span>
+      <span class="arrow">&#9662;</span>
+    </div>
+    <div class="dd-body" id="ddBody"></div>
+  </div>
+  <div class="sidebar-label">USER</div>
+  ${ni('Link', 'tabLink', svgLink())}
+  ${ni('Feedback', 'tabUserFeedback', svgMsg())}`
+  if (currentServerId) {
+    html += `<div class="sidebar-label">${commandsLabel}</div>
+    ${ni('Command Toggles', 'tabServerSettings', svgToggle())}
+    ${ni('Custom Commands', 'tabCustomCmds', svgCode())}
+    ${ni('Server Vars', 'tabServerVars', svgVars())}`
+  }
+  if (isOwner) {
+    html += `<div class="sidebar-label">MANAGEMENT</div>
+    ${ni('Overview', 'tabOverview', svgHome())}
+    ${ni('Status', 'tabStatus', svgStatus())}
+    ${ni('Settings', 'tabSettings', svgSettings())}
+    ${ni('Change @ value', 'tabStatsModify', svgEdit())}
+    ${ni('Servers', 'tabServers', svgServer())}
+    ${ni('Audit Log', 'tabAudit', svgAudit())}
+    <button class="nav-item${currentTab === 'tabFeedback' ? ' active' : ''}" data-tab="tabFeedback" onclick="showTab('tabFeedback')"><span class="ico"><span class="ico-wrap">${svgInbox()}<span class="badge hidden" id="feedbackBadge">0</span></span></span>Feedback Inbox</button>`
+  }
+  nav.innerHTML = html
+}
+
+function showTab(id) {
+  const oldTab = document.querySelector('.tab-content.active')
+  const newTab = document.getElementById(id)
+  if (oldTab === newTab) return
+
+  currentTab = id
+
+  if (oldTab) {
+    oldTab.classList.remove('active')
+    oldTab.style.animation = 'none'
+  }
+
+  if (newTab) {
+    newTab.classList.add('active')
+    newTab.style.animation = 'tabFadeIn 0.2s ease'
+    setTimeout(() => { if (newTab) newTab.style.animation = '' }, 200)
+  }
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === id))
+  document.getElementById('sidebar').classList.remove('open')
+  document.getElementById('sidebarOverlay').classList.remove('show')
+
+  const names = { tabLink:'Link', tabUserFeedback:'Feedback', tabOverview:'Overview', tabStatus:'Status', tabSettings:'Settings', tabStatsModify:'Change @ value', tabServers:'Servers', tabAudit:'Audit Log', tabFeedback:'Feedback Inbox', tabServerSettings:'Command Toggles', tabServerVars:'Server Vars', tabCustomCmds:'Custom Commands' }
+  document.getElementById('topbarTitle').textContent = names[id] || 'Mochabot'
+
+  if (id === 'tabOverview') { refreshBotStatus(); loadBotStats(); loadMetrics2() }
+  if (id === 'tabStatus') loadStatusConfig()
+  if (id === 'tabSettings') loadSettings()
+  if (id === 'tabServers') loadAllServers()
+  if (id === 'tabAudit') { auditPage = 1; loadAuditLog() }
+  if (id === 'tabFeedback') loadFeedback()
+  if (id === 'tabServerVars') { fillServerId(); if (currentServerId) loadServerVars(currentServerId) }
+  if (id === 'tabCustomCmds') { fillServerId(); if (currentServerId) loadCustomCmds() }
+  if (id === 'tabServerSettings') { fillServerId(); if (currentServerId) loadServerDetails(currentServerId) }
+}
+
+function svgLink() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' }
+function svgHome() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' }
+function svgMsg() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' }
+function svgCog() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' }
+function svgStatus() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' }
+function svgPrefix() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>' }
+function svgSettings() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>' }
+function svgEdit() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' }
+function svgServer() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>' }
+function svgAudit() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' }
+function svgInbox() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>' }
+function svgToggle() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="1" y="3" width="22" height="18" rx="3"/><line x1="7" y1="9" x2="13" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="11" y2="17"/></svg>' }
+function svgVars() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>' }
+function svgCode() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' }
+
+async function loadDashboard(userData) {
+  document.getElementById('sidebar').classList.add('show')
+  showPage('pageDashboard')
+  try {
+    let user = userData
+    if (!user) {
+      const data = await api('/session')
+      if (!data.loggedIn) throw new Error('Not logged in')
+      user = data.user
+    }
+    isOwner = user.isOwner
+    document.getElementById('ownerBadge').style.display = isOwner ? 'inline' : 'none'
+    document.getElementById('sidebarUsername').textContent = 'Logged in as ' + user.username
+    buildNav()
+    showTab('tabLink')
+    await loadServers()
+
+    if (isOwner) {
+          // NEW: Clear them first just in case
+          clearInterval(metricsRefresh)
+          clearInterval(botStatusRefresh)
+
+          botStatusRefresh = setInterval(refreshBotStatus, 5000)
+          metricsRefresh = setInterval(loadMetrics2, 1000)
+        }
+  } catch (e) { toast('Failed to load dashboard: ' + e.message) }
+}
+
+async function loadServers() {
+  try {
+    const data = await api('/servers')
+    currentServers = data.servers
+    const body = document.getElementById('ddBody')
+    body.innerHTML = ''
+    if (!data.servers.length) {
+      body.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:13px;text-align:center">No servers linked.</div>'
+    }
+    data.servers.forEach(s => {
+      const item = document.createElement('button')
+      item.className = 'dd-item'
+      item.dataset.id = s.id
+      const icon = s.icon ? '<img src="' + s.icon + '" alt="">' : '<div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;text-transform:uppercase">' + getInitials(s.name) + '</div>'
+      item.innerHTML = icon + '<span class="srv-name">' + s.name + '</span>'
+      item.onclick = () => { selectServer(s.id); closeServerDropdown() }
+      body.appendChild(item)
+    })
+    const linked = document.getElementById('linkedServersList')
+    if (data.servers.length) {
+      linked.innerHTML = data.servers.map(s => '<div class="toggle-item"><span>' + s.name + '</span><button class="btn btn-sm btn-danger" onclick="unlinkServer(\'' + s.id + '\')">Unlink</button></div>').join('')
+    } else {
+      linked.innerHTML = '<p style="color:var(--text2);font-size:13px">No servers linked yet.</p>'
+    }
+  } catch (e) { toast('Failed to load servers: ' + e.message) }
+}
+
+function toggleServerDropdown() {
+  document.getElementById('serverDropdown').classList.toggle('open')
+}
+function closeServerDropdown() {
+  document.getElementById('serverDropdown').classList.remove('open')
+}
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('serverDropdown')
+  if (dd && !dd.contains(e.target)) dd.classList.remove('open')
+})
+
+function getInitials(name) {
+  if (!name) return '?'
+  return name.split(/[ ']+/).filter(w => w && /[a-zA-Z]/.test(w[0])).map(w => w[0].toUpperCase()).slice(0, 2).join('') || name[0].toUpperCase()
+}
+
+function selectServer(id) {
+  currentServerId = id
+  document.querySelectorAll('.dd-item').forEach(el => el.classList.toggle('active', el.dataset.id === id))
+  const s = currentServers.find(x => x.id === id)
+  const iconHtml = s?.icon ? '<img src="' + s.icon + '" class="dd-sel-icon">' : ''
+  document.getElementById('ddSelected').innerHTML = s ? s.name : 'Select a server'
+  const wrap = document.querySelector('.dd-sel-wrap')
+  if (wrap) {
+    const existing = wrap.querySelector('.dd-sel-icon')
+    if (existing) existing.remove()
+    if (s?.icon) wrap.insertAdjacentHTML('afterbegin', iconHtml)
+  }
+  buildNav()
+  const commandsTabs = ['tabServerSettings', 'tabCustomCmds', 'tabServerVars']
+  if (commandsTabs.includes(currentTab)) {
+    showTab(currentTab)
+  }
+  if (id && currentTab === 'tabServerSettings') loadServerDetails(id)
+}
+
+function fillServerId() {
+  const sv = document.getElementById('svServerDisplay')
+  const ccSv = document.getElementById('ccServerDisplay')
+  const s = currentServers.find(x => x.id === currentServerId)
+  const name = s?.name || 'No server selected'
+  if (sv) sv.value = name
+  if (ccSv) ccSv.value = name
+}
+
+async function loadServerDetails(id) {
+  const s = currentServers.find(x => x.id === id)
+  if (s) {
+    document.getElementById('selectedServerName').textContent = s.name
+    document.getElementById('selectedServerMembers').textContent = (s.memberCount || 0).toLocaleString() + ' members'
+  }
+  try {
+    const data = await api('/servers/' + id + '/toggles')
+    const list = document.getElementById('togglesList')
+    list.innerHTML = ''
+    const cats = {}
+    data.toggles.forEach(t => {
+      const cat = t.category || 'uncategorized'
+      if (!cats[cat]) cats[cat] = []
+      cats[cat].push(t)
+    })
+    for (const [cat, cmds] of Object.entries(cats)) {
+      const section = document.createElement('div')
+      section.className = 'cmd-category'
+      section.innerHTML = '<div class="cat-header">' + cat.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase()) + '</div>'
+      cmds.forEach(t => {
+        const aliasStr = t.aliases?.length ? ' (' + t.aliases.join(', ') + ')' : ''
+        const div = document.createElement('div')
+        div.className = 'toggle-item'
+        div.innerHTML = '<div class="cmd-info"><span class="cmd-name">' + t.name + aliasStr + '</span><span class="cmd-desc">' + (t.description || '') + '</span></div>' +
+          '<label class="toggle-switch"><input type="checkbox" ' + (t.enabled ? 'checked' : '') + ' onchange="toggleCommand(\'' + id + '\',\'' + t.name + '\',this.checked)"><span class="slider"></span></label>'
+        section.appendChild(div)
+      })
+      list.appendChild(section)
+    }
+    // Add custom commands as a separate category
+    const ccData = await api('/custom-cmds')
+    const ccFiltered = (ccData.commands || []).filter(c => c.server_id === '*' || c.server_id === id)
+    if (ccFiltered.length) {
+      const ccSection = document.createElement('div')
+      ccSection.className = 'cmd-category'
+      ccSection.innerHTML = '<div class="cat-header">Custom Commands</div>'
+      for (const cc of ccFiltered) {
+        const div = document.createElement('div')
+        div.className = 'toggle-item'
+        const prefix = await fetchPrefix()
+        div.innerHTML = '<div class="cmd-info"><span class="cmd-name">' + prefix + (cc.name || '') + '</span><span class="cmd-desc">' + (cc.description || cc.script?.slice(0, 40) || '') + '</span></div>'
+        ccSection.appendChild(div)
+      }
+      list.appendChild(ccSection)
+    }
+  } catch (e) { toast('Failed to load toggles: ' + e.message) }
+}
+
+async function toggleCommand(guildId, cmd, enabled) {
+  try { await api('/servers/' + guildId + '/toggles', { method: 'POST', body: JSON.stringify({ commandName: cmd, enabled }) }) }
+  catch (e) { toast('Failed: ' + e.message) }
+}
+
+let pairCooldown = false
+async function pairServer() {
+  if (pairCooldown) { toast('Please wait 60s between pairing attempts'); return }
+  const code = document.getElementById('pairCode').value.trim().toUpperCase()
+  const err = document.getElementById('pairError')
+  const success = document.getElementById('pairSuccess')
+  err.style.display = 'none'; success.style.display = 'none'
+  if (!code) { err.textContent = 'Enter a pairing code'; err.style.display = 'block'; return }
+  try {
+    const data = await api('/pair', { method: 'POST', body: JSON.stringify({ code }) })
+    toast('Linked: ' + data.server.name, 'success')
+    document.getElementById('pairCode').value = ''
+    await loadServers()
+    pairCooldown = true
+    setTimeout(() => { pairCooldown = false }, 60000)
+  } catch (e) { err.textContent = e.message; err.style.display = 'block' }
+}
+
+async function unlinkServer(id) {
+  try {
+    await api('/servers/' + id, { method: 'DELETE' })
+    toast('Server unlinked', 'success')
+    await loadServers()
+  } catch (e) { toast(e.message) }
+}
+
+async function refreshBotStatus() {
+  try {
+    const data = await api('/bot/status')
+    const display = document.getElementById('botStatusDisplay')
+    if (!display) return
+    display.innerHTML = '<span class="dot ' + (data.running ? 'online' : 'offline') + '"></span> ' + (data.running ? 'Online' : 'Offline')
+    document.getElementById('botUsername').textContent = data.username || '-'
+    const up = data.uptime ? Math.floor(data.uptime / 1000) : 0
+    document.getElementById('botUptime').textContent = up ? formatDuration(up) : '-'
+    const btn = document.getElementById('botToggleBtn')
+    if (btn) btn.textContent = data.running ? 'Stop' : 'Start'
+  } catch {}
+}
+
+function formatDuration(sec) {
+  const d = Math.floor(sec / 86400); const h = Math.floor((sec % 86400) / 3600)
+  const m = Math.floor((sec % 3600) / 60); const s = sec % 60
+  let str = ''
+  if (d) str += d + 'd '; if (h) str += h + 'h '; if (m) str += m + 'm '
+  str += s + 's'; return str
+}
+
+async function toggleBot() {
+  try {
+    const data = await api('/bot/status')
+    if (data.running) {
+      await api('/bot/stop', { method: 'POST' })
+      toast('Bot stopped', 'success')
+    } else {
+      await api('/bot/start', { method: 'POST' })
+      toast('Bot starting...', 'success')
+      setTimeout(refreshBotStatus, 2000)
+    }
+    refreshBotStatus()
+  } catch (e) { toast(e.message) }
+}
+
+function setRange(range) {
+  currentRange = range
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b.dataset.range === range))
+  loadMetrics2()
+}
+
+function getMetricsCanvas() {
+  return document.getElementById('metricsChart')
+}
+
+async function loadMetrics2() {
+  try { const data = await api('/metrics?range=' + currentRange); drawChart(data.points || [], getMetricsCanvas()) } catch {}
+}
+
+function drawChart(points, canvas) {
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  const dpr = window.devicePixelRatio || 1
+  const w = canvas.parentElement.clientWidth - 32
+  canvas.width = w * dpr; canvas.height = 280 * dpr
+  canvas.style.width = w + 'px'; canvas.style.height = '280px'
+  ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, 280)
+  const pad = { top: 20, bottom: 30, left: 40, right: 20 }
+  const cw = w - pad.left - pad.right; const ch = 280 - pad.top - pad.bottom
+  if (!points.length) {
+    ctx.fillStyle = '#999'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center'
+    ctx.fillText("Data doesn't date back that far.", w / 2, 140); return
+  }
+  const minT = points[0].timestamp; const maxT = points[points.length - 1].timestamp; const timeRange = maxT - minT || 1
+  let maxCpu = 0, maxRam = 0
+  points.forEach(p => { if (p.cpuPercent > maxCpu) maxCpu = p.cpuPercent; const ramPct = (p.ramRss / p.ramTotal) * 100; if (ramPct > maxRam) maxRam = ramPct })
+  const maxVal = Math.max(100, Math.ceil(Math.max(maxCpu, maxRam) / 10) * 10)
+  function xPos(t) { return pad.left + ((t - minT) / timeRange) * cw }
+  function yPos(v) { return pad.top + ch - (v / maxVal) * ch }
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (ch / 4) * i; ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke()
+    const val = maxVal - (maxVal / 4) * i; ctx.fillStyle = '#999'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right'
+    ctx.fillText(Math.round(val) + '%', pad.left - 6, y + 3)
+  }
+  const numLabels = Math.min(Math.floor(cw / 60), points.length); const step = Math.max(1, Math.floor(points.length / numLabels))
+  for (let i = 0; i < points.length; i += step) {
+    const p = points[i]; const x = xPos(p.timestamp); ctx.fillStyle = '#999'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center'
+    const d = new Date(p.timestamp)
+    const label = currentRange === 'hour' ? d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0') : currentRange === 'day' ? d.getHours().toString().padStart(2,'0')+':00' : currentRange === 'week' ? d.toLocaleDateString(undefined,{weekday:'short',hour:'2-digit'}) : d.toLocaleDateString(undefined,{month:'short',day:'numeric'})
+    ctx.fillText(label, x, 280 - pad.bottom + 16)
+  }
+  function drawLine(data, color, key) {
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath()
+    points.forEach((p, i) => { const x = xPos(p.timestamp); const y = yPos(key === 'cpu' ? p.cpuPercent : (p.ramRss / p.ramTotal) * 100); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y) })
+    ctx.stroke()
+  }
+  drawLine(points, '#fff', 'cpu'); drawLine(points, '#666', 'ram')
+  ctx.fillStyle = '#fff'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left'
+  ctx.fillRect(w - pad.right - 70, pad.top, 10, 3); ctx.fillText('CPU', w - pad.right - 56, pad.top + 4)
+  ctx.fillStyle = '#666'
+  ctx.fillRect(w - pad.right - 70, pad.top + 14, 10, 3); ctx.fillText('RAM', w - pad.right - 56, pad.top + 18)
+}
+
+async function loadSettings() {
+  try {
+    const data = await api('/settings')
+    const list = document.getElementById('settingsList')
+    const entries = Object.entries(data.settings)
+    if (!entries.length) { list.innerHTML = '<p style="color:var(--text2);font-size:13px">No settings found.</p>'; return }
+    list.innerHTML = entries.map(([k, v]) => '<div class="setting-row"><span><span class="setting-label">' + k + '</span><br><span class="setting-value">' + v + '</span></span><button class="btn btn-sm btn-danger" onclick="deleteSetting(\'' + k.replace(/'/g,"\\'") + '\')" style="flex-shrink:0">&times;</button></div>').join('')
+  } catch (e) { toast(e.message) }
+}
+async function deleteSetting(key) {
+  if (!(await confirmAsync('Delete setting "' + key + '"?'))) return
+  try { await api('/settings/' + encodeURIComponent(key), { method: 'DELETE' }); toast('Deleted', 'success'); loadSettings() } catch (e) { toast(e.message) }
+}
+
+async function saveSetting() {
+  const key = document.getElementById('settingsKeyInput').value.trim(); const value = document.getElementById('settingsValueInput').value.trim()
+  if (!key) { toast('Key required'); return }
+  try { await api('/settings', { method: 'POST', body: JSON.stringify({ key, value }) }); toast('Saved', 'success'); loadSettings() } catch (e) { toast(e.message) }
+}
+
+let rotatingData = { statuses: [], duration: 15 }
+function renderRotatingEditor() {
+  const el = document.getElementById('rotatingEditor')
+  if (!el) return
+  if (!rotatingData.statuses.length) {
+    el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:4px 0">No rotating statuses. Add one below.</div>'
+    return
+  }
+  let html = ''
+  rotatingData.statuses.forEach((s, i) => {
+    html += '<div class="re-row">'
+    html += '<input type="text" value="' + esc(s) + '" onchange="updateRotatingStatusText(' + i + ',this.value)">'
+    html += '<button class="re-del" onclick="removeRotatingStatus(' + i + ')">&times;</button>'
+    html += '</div>'
+  })
+  el.innerHTML = html
+}
+function updateRotatingStatusText(i, val) {
+  rotatingData.statuses[i] = val
+}
+function updateSharedDuration(val) {
+  rotatingData.duration = parseInt(val) || 15
+}
+function removeRotatingStatus(i) {
+  rotatingData.statuses.splice(i, 1)
+  renderRotatingEditor()
+}
+function addRotatingStatus() {
+  const text = document.getElementById('reNewStatus').value.trim()
+  if (!text) return
+  rotatingData.statuses.push(text)
+  document.getElementById('reNewStatus').value = ''
+  renderRotatingEditor()
+}
+
+async function loadStatusConfig() {
+  try {
+    const data = await api('/bot/status-config')
+    const c = data.config
+    document.getElementById('statusMode').value = c.status
+    document.getElementById('activityType').value = c.activityType
+    document.getElementById('staticStatusInput').value = c.staticStatus || ''
+    if (c.rotatingStatuses) {
+      rotatingData = { statuses: [...c.rotatingStatuses.statuses], duration: c.rotatingStatuses.duration }
+      renderRotatingEditor()
+    }
+    const grid = document.getElementById('statusGrid')
+    grid.innerHTML = '<div class="status-card"><h4>Mode</h4><div class="val">' + c.status + '</div></div><div class="status-card"><h4>Activity</h4><div class="val">' + c.activityType + '</div></div><div class="status-card"><h4>Static</h4><div class="val">' + (c.staticStatus || '-') + '</div></div><div class="status-card"><h4>Rotating Items</h4><div class="val">' + (c.rotatingStatuses?.statuses?.length || 0) + '</div></div>'
+  } catch (e) { toast(e.message) }
+}
+async function updateBotPresence() {
+  const status = document.getElementById('statusMode').value; const activityType = document.getElementById('activityType').value
+  const body = { status, activityType }
+  if (rotatingData.statuses.length) body.rotatingStatuses = rotatingData
+  const staticVal = document.getElementById('staticStatusInput').value.trim()
+  if (staticVal) body.staticStatus = staticVal
+  try { await api('/bot/set-status', { method: 'POST', body: JSON.stringify(body) }); toast('Presence updated', 'success'); loadStatusConfig() } catch (e) { toast(e.message) }
+}
+async function statsModify() {
+  const username = document.getElementById('smUsername').value.trim()
+  const field = document.getElementById('smField').value; const amount = document.getElementById('smAmount').value
+  const err = document.getElementById('smError'); const success = document.getElementById('smSuccess')
+  err.style.display = 'none'; success.style.display = 'none'
+  if (!username || amount === '') { err.textContent = 'Fill all fields'; err.style.display = 'block'; return }
+  try {
+    await api('/admin/statsmodify', { method: 'POST', body: JSON.stringify({ field, username, amount: parseInt(amount) }) })
+    success.style.display = 'block'; success.textContent = field + ' for ' + username + ' set to ' + amount
+  } catch (e) { err.textContent = e.message; err.style.display = 'block' }
+}
+
+async function loadAllServers() {
+  try {
+    const data = await api('/servers/all')
+    document.getElementById('serverCount').textContent = '(' + data.total + ' total)'
+    const tbody = document.getElementById('allServersTable')
+    tbody.innerHTML = data.servers.map(s => '<tr><td>' + (s.icon ? '<img src="' + s.icon + '" alt="">' : '<div style="width:24px;height:24px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;text-transform:uppercase;font-weight:600">' + getInitials(s.name) + '</div>') + s.name + '</td><td style="font-family:monospace;font-size:12px">' + s.id + '</td><td>' + (s.memberCount || 0).toLocaleString() + '</td><td><button class="btn btn-sm btn-danger" onclick="leaveServer(\'' + s.id + '\')">Leave</button></td></tr>').join('')
+  } catch (e) { toast(e.message) }
+}
+
+async function leaveServer(id) {
+  if (!(await confirmAsync('Leave this server?'))) return
+  try {
+    await api('/servers/' + id + '/leave', { method: 'POST' })
+    toast('Left server', 'success')
+    loadAllServers()
+  } catch (e) { toast(e.message) }
+}
+
+async function loadBotStats() {
+  try {
+    const data = await api('/bot-stats')
+    const stats = document.getElementById('overviewStats')
+    if (!stats) return
+    stats.innerHTML = `
+      <div class="stat-card"><h3>Users</h3><div class="value">${data.users || 0}</div><div class="sub">Registered users</div></div>
+      <div class="stat-card"><h3>Commands</h3><div class="value">${data.commandsExecuted || 0}</div><div class="sub">Total executed</div></div>
+      <div class="stat-card"><h3>Servers</h3><div class="value">${data.guilds || 0}</div><div class="sub">${data.totalMembers || 0} members</div></div>
+      <div class="stat-card"><h3>Linked</h3><div class="value">${data.linkedServers || 0}</div><div class="sub">Dashboard linked</div></div>
+      <div class="stat-card"><h3>Web Users</h3><div class="value">${data.webUsers || 0}</div><div class="sub">Dashboard accounts</div></div>
+      <div class="stat-card"><h3>Feedback</h3><div class="value">${data.openFeedback || 0}</div><div class="sub">Open items</div></div>
+    `
+    const cmds = document.getElementById('topCmds')
+    if (data.topCommands?.length) {
+      cmds.innerHTML = data.topCommands.slice(0, 10).map(c => {
+        const count = c.count
+        let display
+        if (count >= 1000000000) display = (count / 1000000000).toFixed(count % 1000000000 === 0 ? 0 : 1) + ' billion'
+        else if (count >= 1000000) display = (count / 1000000).toFixed(count % 1000000 === 0 ? 0 : 1) + ' million'
+        else if (count >= 1000) display = (count / 1000).toFixed(count % 1000 === 0 ? 0 : 1) + 'k'
+        else display = count.toLocaleString()
+        return '<div class="top-cmd-item"><div class="cmd-count">' + display + '</div><div class="cmd-name">' + c.command_name + '</div></div>'
+      }).join('')
+    } else {
+      cmds.innerHTML = ''
+    }
+  } catch {}
+}
+
+async function loadAuditLog(page) {
+  if (page !== undefined) auditPage = page
+  try {
+    const pagination = document.getElementById('auditPagination')
+    if (pagination) pagination.classList.add('paginating')
+    const data = await api('/audit-log?page=' + auditPage + '&perPage=25')
+    auditTotalPages = data.totalPages || 1
+    const table = document.getElementById('auditTable')
+    if (!data.entries?.length) {
+      table.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px">No audit entries yet.</div>'
+      if (pagination) { pagination.innerHTML = ''; pagination.classList.remove('paginating') }
+      return
+    }
+    let html = '<table class="audit-enter"><thead><tr><th>Time</th><th>Action</th><th>Details</th><th>User</th></tr></thead><tbody>'
+    data.entries.forEach(e => {
+      const d = new Date((e.timestamp || 0) * 1000)
+      const ts = d.toLocaleDateString() + ' ' + d.toLocaleTimeString()
+      html += '<tr><td class="time">' + ts + '</td><td class="action">' + esc(e.action) + '</td><td class="detail">' + esc(e.details || '').slice(0, 80) + '</td><td style="font-size:11px;color:var(--text2)">' + esc(e.username || '') + '</td></tr>'
+    })
+    html += '</tbody></table>'
+    table.innerHTML = html
+    if (pagination) {
+      if (auditTotalPages > 1) {
+        pagination.innerHTML = '<button class="btn btn-sm btn-outline" onclick="loadAuditLog(' + (auditPage - 1) + ')" ' + (auditPage <= 1 ? 'disabled' : '') + '>Previous</button><span>Page ' + auditPage + ' of ' + auditTotalPages + '</span><button class="btn btn-sm btn-outline" onclick="loadAuditLog(' + (auditPage + 1) + ')" ' + (auditPage >= auditTotalPages ? 'disabled' : '') + '>Next</button>'
+      } else {
+        pagination.innerHTML = ''
+      }
+      pagination.classList.remove('paginating')
+    }
+  } catch (e) { toast(e.message) }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML }
+
+let fbPage = 1
+let fbTotalPages = 1
+async function loadFeedback(page) {
+  if (page !== undefined) fbPage = page
+  try {
+    const data = await api('/feedback?page=' + fbPage + '&perPage=20')
+    fbTotalPages = data.totalPages || 1
+    const list = document.getElementById('feedbackList')
+    const badge = document.getElementById('feedbackBadge')
+    if (badge) {
+      const cnt = data.openCount || 0
+      badge.textContent = cnt
+      badge.classList.toggle('hidden', cnt === 0)
+    }
+    if (!data.feedback?.length) {
+      list.innerHTML = '<p style="color:var(--text2);font-size:13px">No feedback submitted yet.</p>'
+      list.innerHTML += '<div class="pagination" style="margin-top:12px"></div>'
+      return
+    }
+    list.innerHTML = data.feedback.map(f => {
+      const d = new Date((f.created_at || 0) * 1000)
+      return '<div class="feedback-item"><div class="fb-header"><span><strong>' + esc(f.category || 'general') + '</strong> <span class="fb-user">by ' + esc(f.username || 'anonymous') + ' · ' + d.toLocaleDateString() + '</span></span><span class="fb-status ' + f.status + '">' + f.status + '</span></div><div class="fb-msg">' + esc(f.message) + '</div><div class="fb-actions"><button class="btn btn-sm btn-outline" onclick="updateFeedbackStatus(' + f.id + ',\'acknowledged\')">Acknowledge</button><button class="btn btn-sm btn-success" onclick="updateFeedbackStatus(' + f.id + ',\'resolved\')">Resolve</button></div></div>'
+    }).join('')
+    if (fbTotalPages > 1) {
+      list.innerHTML += '<div class="pagination"><button class="btn btn-sm btn-outline" onclick="loadFeedback(' + (fbPage - 1) + ')" ' + (fbPage <= 1 ? 'disabled' : '') + '>Previous</button><span>Page ' + fbPage + ' of ' + fbTotalPages + '</span><button class="btn btn-sm btn-outline" onclick="loadFeedback(' + (fbPage + 1) + ')" ' + (fbPage >= fbTotalPages ? 'disabled' : '') + '>Next</button></div>'
+    }
+  } catch (e) { toast(e.message) }
+}
+
+async function updateFeedbackStatus(id, status) {
+  try { await api('/feedback/' + id + '/status', { method: 'POST', body: JSON.stringify({ status }) }); toast('Updated', 'success'); loadFeedback() } catch (e) { toast(e.message) }
+}
+
+async function pollFeedbackCount() {
+  try {
+    const data = await api('/feedback?page=1&perPage=1')
+    const badge = document.getElementById('feedbackBadge')
+    if (badge) {
+      const cnt = data.openCount || 0
+      badge.textContent = cnt
+      badge.classList.toggle('hidden', cnt === 0)
+    }
+  } catch {}
+}
+
+async function submitFeedback() {
+  const message = document.getElementById('fbMessage').value.trim()
+  const category = document.getElementById('fbCategory').value
+  const err = document.getElementById('fbError'); const success = document.getElementById('fbSuccess')
+  err.style.display = 'none'; success.style.display = 'none'
+  if (!message || message.length < 3) { err.textContent = 'Message must be at least 3 characters'; err.style.display = 'block'; return }
+  try {
+    await api('/feedback', { method: 'POST', body: JSON.stringify({ message, category }) })
+    success.style.display = 'block'; success.textContent = 'Thanks for your feedback!'
+    document.getElementById('fbMessage').value = ''
+  } catch (e) { err.textContent = e.message; err.style.display = 'block' }
+}
+
+// --- Server Variables ---
+async function loadServerVars(serverId) {
+  try {
+    const data = await api('/servers/' + serverId + '/vars')
+    const list = document.getElementById('serverVarsList')
+    const entries = Object.entries(data.vars || {})
+    if (!entries.length) { list.innerHTML = '<p style="color:var(--text2);font-size:13px">No variables set for this server.</p>'; return }
+    list.innerHTML = entries.map(([k, v]) => '<div class="setting-row"><span><span class="setting-label">' + k + '</span><br><span class="setting-value">' + v + '</span></span><button class="btn btn-sm btn-danger" onclick="deleteServerVar(\'' + serverId + '\',\'' + k.replace(/'/g,"\\'") + '\')">&times;</button></div>').join('')
+  } catch (e) { toast(e.message) }
+}
+async function setServerVar() {
+  const serverId = currentServerId
+  const key = document.getElementById('svKey').value.trim()
+  const value = document.getElementById('svValue').value.trim()
+  if (!serverId || !key) { toast('Select a server and enter a key'); return }
+  try { await api('/servers/' + serverId + '/vars', { method: 'POST', body: JSON.stringify({ key, value }) }); toast('Variable set', 'success'); loadServerVars(serverId) } catch (e) { toast(e.message) }
+}
+async function deleteServerVar(serverId, key) {
+  if (!(await confirmAsync('Delete variable "' + key + '"?'))) return
+  try { await api('/servers/' + serverId + '/vars/' + encodeURIComponent(key), { method: 'DELETE' }); toast('Deleted', 'success'); loadServerVars(serverId) } catch (e) { toast(e.message) }
+}
+// --- Custom Commands ---
+let ccCategories = []
+async function loadCcCategories() {
+  try {
+    const data = await api('/command-categories')
+    ccCategories = data.categories || []
+    const sel = document.getElementById('ccCategory')
+    if (sel) sel.innerHTML = ccCategories.map(c => '<option value="' + c + '">' + c.replace(/_/g,' ') + '</option>').join('') || '<option value="general">general</option>'
+  } catch {}
+}
+
+async function loadCustomCmds() {
+  try {
+    const data = await api('/custom-cmds')
+    const list = document.getElementById('customCmdsList')
+    const filtered = (data.commands || []).filter(c => c.server_id === '*' || c.server_id === currentServerId)
+    if (!filtered.length) { list.innerHTML = '<p style="color:var(--text2);font-size:13px">No custom commands for this server.</p>'; return }
+    const prefix = await fetchPrefix()
+    list.innerHTML = filtered.map(c => '<div class="cc-row" onclick="editCustomCmd(' + c.id + ')"><div class="cc-row-top">' + prefix + c.name + '</div><div class="cc-row-bot">' + (c.description || c.script?.slice(0, 60) || '') + '</div><button class="btn-del" onclick="event.stopPropagation();deleteCustomCmd(' + c.id + ')">' + svgTrash() + '</button></div>').join('')
+  } catch (e) { toast(e.message) }
+}
+let ccPrefix = ''
+async function fetchPrefix() {
+  if (ccPrefix) return ccPrefix
+  try { const d = await api('/prefix'); ccPrefix = d.prefix || '!'; return ccPrefix } catch { return '!' }
+}
+
+async function createCustomCmd() {
+  await loadCcCategories()
+  fillServerId()
+  // Find next available !newcommand(N) name
+  try {
+    const data = await api('/custom-cmds')
+    const existing = (data.commands || []).filter(c => c.server_id === '*' || c.server_id === currentServerId)
+    let n = 1
+    while (existing.some(c => c.name === 'newcommand' + n)) n++
+    document.getElementById('ccEditId').value = ''
+    document.getElementById('ccName').value = 'newcommand' + n
+    document.getElementById('ccDescription').value = ''
+    document.getElementById('ccScript').value = ''
+    document.getElementById('ccSuppress').checked = false
+    const catSel = document.getElementById('ccCategory')
+    if (catSel.options.length) catSel.selectedIndex = 0
+    document.getElementById('ccEditor').classList.remove('hidden')
+  } catch {}
+}
+
+async function editCustomCmd(id) {
+  await loadCcCategories()
+  fillServerId()
+  try {
+    const data = await api('/custom-cmds')
+    const cmd = (data.commands || []).find(c => c.id === id)
+    if (!cmd) { toast('Command not found'); return }
+    document.getElementById('ccEditId').value = cmd.id
+    document.getElementById('ccName').value = cmd.name
+    document.getElementById('ccDescription').value = cmd.description || ''
+    document.getElementById('ccScript').value = cmd.script || ''
+    document.getElementById('ccSuppress').checked = !!cmd.suppress_errors
+    const catSel = document.getElementById('ccCategory')
+    if (catSel) {
+      const idx = [...catSel.options].findIndex(o => o.value === cmd.category)
+      if (idx >= 0) catSel.selectedIndex = idx
+    }
+    document.getElementById('ccEditor').classList.remove('hidden')
+  } catch (e) { toast(e.message) }
+}
+
+function closeCcEditor() {
+  document.getElementById('ccEditor').classList.add('hidden')
+}
+
+async function saveCustomCmd() {
+  const editId = document.getElementById('ccEditId').value
+  const name = document.getElementById('ccName').value.trim()
+  const serverId = currentServerId || '*'
+  const script = document.getElementById('ccScript').value.trim()
+  const description = document.getElementById('ccDescription').value.trim()
+  const category = document.getElementById('ccCategory').value
+  const suppress = document.getElementById('ccSuppress').checked
+  if (!name || !script) { toast('Name and script required'); return }
+  try {
+    if (editId) {
+      await api('/custom-cmds/' + editId, { method: 'PUT', body: JSON.stringify({ name, server_id: serverId, script, description, category, suppress_errors: suppress }) })
+    } else {
+      await api('/custom-cmds', { method: 'POST', body: JSON.stringify({ name, server_id: serverId, script, description, category, suppress_errors: suppress }) })
+    }
+    toast('Command saved', 'success')
+    closeCcEditor()
+    loadCustomCmds()
+  } catch (e) { toast(e.message) }
+}
+
+async function deleteCustomCmd(id) {
+  if (!(await confirmAsync('Delete this custom command?'))) return
+  try { await api('/custom-cmds/' + id, { method: 'DELETE' }); toast('Deleted', 'success'); loadCustomCmds() } catch (e) { toast(e.message) }
+}
+
+function svgTrash() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open')
+  document.getElementById('sidebarOverlay').classList.toggle('show')
+}
+document.getElementById('sidebarOverlay').onclick = toggleSidebar
+
+async function init() {
+  if (!getToken()) { showPage('pageLanding'); return }
+  try {
+    const data = await api('/session')
+    if (data.loggedIn) {
+      loadDashboard(data.user)
+    } else {
+      setToken(null)
+      showPage('pageLanding')
+    }
+  } catch { setToken(null); showPage('pageLanding') }
+}
+
+window.addEventListener('resize', () => {
+  loadMetrics2()
+})
+document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') login() })
+document.getElementById('regPassword').addEventListener('keydown', e => { if (e.key === 'Enter') register() })
+init()
+</script>
+</body>
+</html>
