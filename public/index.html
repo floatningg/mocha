@@ -475,14 +475,14 @@ textarea.code-input:focus{border-color:var(--text)}
           <div class="settings-card">
             <h3>Rotating Statuses</h3>
             <div id="rotatingEditor" class="rotating-editor"></div>
-<div class="re-add">
-                  <div class="re-row">
-                    <input type="text" id="reNewStatus" placeholder="New status text" style="flex:1;">
-                    <button class="re-add-btn" onclick="addRotatingStatus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-                  </div>
-                  <span class="re-dur-label">sec:</span>
-                  <input type="text" id="reNewDuration" class="re-duration" value="15" onkeypress="return event.charCode>=48&&event.charCode<=57" onchange="updateSharedDuration(this.value)">
-                </div>
+            <div class="re-add">
+              <div class="re-row">
+                <input type="text" id="reNewStatus" placeholder="New status text">
+                <button class="re-add-btn" onclick="addRotatingStatus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+              </div>
+              <span class="re-dur-label">sec:</span>
+              <input type="text" id="reNewDuration" class="re-duration" value="15" onkeypress="return event.charCode>=48&&event.charCode<=57" onchange="updateSharedDuration(this.value)">
+            </div>
           </div>
           <button class="btn btn-primary" onclick="updateBotPresence()" style="width:100%;margin-top:12px">Apply</button>
         </div>
